@@ -318,10 +318,31 @@ you've tried so far, and we will try to help you out.
  you're running an appropriate shell,you can try the command
  **`echo $SHELL`**.If it says something like **`/bin/bash`** or
  **`/usr/bin/zsh`**,that means you're running the right program.
+ ```bash
+ $ echo $SHELL
+ /bin/zsh
+ ```
  2. Create a new directory called **`missing`** under **`/tmp`**/
+ ```bash
+ $ mkdir /tmp/missing
+ $ ls /tmp
+ ...
+ missing
+ ...
+ ```
  3. Look up the **`touch`** program.The **`man`** program is your friend.
+ ```bash
+ $ man touch
+        touch - change file timestamps
+...
+       A FILE argument that does not exist is created empty, unless -c or -h is supplied.        
+ [q]
+ ```
  4. Use **`touch`** to create a new file called **`semester`** in 
  **`missing`**.
+ ```bash
+ $ touch /tmp/missing/semester
+ ```
  5. Write the following into the file,one line at a time.
  ```bash
  #!/bin/sh
@@ -332,3 +353,126 @@ you've tried so far, and we will try to help you out.
  meaning even within double-quoted(**`"`**)strings.Bash treats 
  single-quoted strings(**`'`**)differently:they will do the trick
  in this case.See the Bash [quoting](https://www.gnu.org/software/bash/manual/html_node/Quoting.html) manual page for more information.
+
+```bash
+$ echo '#!/bin/sh' > /tmp/missing/semester
+$ cat /tmp/missing/semester
+#!/bin/sh
+$ echo 'curl --head --silent https://missing.csail.mit.edu' >> /tmp/missing/semester
+$ cat /tmp/misssing/semester
+#!/bin/sh
+curl --head --silent https://missing.csail.mit.edu
+$ 
+```
+ 6. Try to execute the file,i.e.,type the path to the script(**`./semester`**)into
+ your shell and press enter.Understand why it doesn't work by consulting the output
+ of **`ls`** (hint:look at the permission bits of the file).
+```bash
+$ ./semester
+zsh: permission denied: ./semester
+```
+
+ 7. Run the command by explicitly starting the **`sh`** interpreter,and giving it the
+ file **`semester`** as the first argument,i.e.**`sh semester`**.Why does this work,
+ while **`./semester`** didn't?
+ ```bash
+ $ sh semester
+ HTTP/1.1 200 Connection Established
+
+HTTP/2 200 
+server: GitHub.com
+content-type: text/html; charset=utf-8
+last-modified: Fri, 04 Mar 2022 17:03:44 GMT
+access-control-allow-origin: *
+etag: "62224670-1f37"
+expires: Sun, 03 Apr 2022 14:05:16 GMT
+cache-control: max-age=600
+x-proxy-cache: MISS
+x-github-request-id: 90B2:6390:391FD6:7C4FAD:6249A744
+accept-ranges: bytes
+date: Mon, 04 Apr 2022 05:46:14 GMT
+via: 1.1 varnish
+age: 0
+x-served-by: cache-lax10653-LGB
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1649051174.292636,VS0,VE64
+vary: Accept-Encoding
+x-fastly-request-id: 719b74ea58a7fa48bb514ae5f65c973c5ad1c3d2
+content-length: 7991
+ ```
+ 8. Look up the **`chmod`** program(e.g. use **`man`** chmod).
+ ```bash
+ $ man chmod
+        chmod - change file mode bits
+[q]
+ ```
+ 9. Use **`chmod`** to make it possible to run the command **`./semester`** rather
+ than having to type **`sh semester`**.How does your shell know that the file is
+ supposed to be interpreted using **`sh`**?See this page on the [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) line for
+ more information.
+ ```bash
+ $ cd /tmp/missing
+ $ pwd
+ /tmp/missing
+ $ ls -la
+ -rw-rw-r-- 1 deft deft    61 Apr  4 10:55 semester
+ $ chmod +x ./semester
+ $ ls -la
+ -rwxrwxr-x 1 deft deft    61 Apr  4 10:55 semester
+ $ ./semester
+ HTTP/1.1 200 Connection Established
+
+HTTP/2 200 
+server: GitHub.com
+content-type: text/html; charset=utf-8
+last-modified: Fri, 04 Mar 2022 17:03:44 GMT
+access-control-allow-origin: *
+etag: "62224670-1f37"
+expires: Sun, 03 Apr 2022 14:05:16 GMT
+cache-control: max-age=600
+x-proxy-cache: MISS
+x-github-request-id: 90B2:6390:391FD6:7C4FAD:6249A744
+accept-ranges: bytes
+date: Mon, 04 Apr 2022 05:51:41 GMT
+via: 1.1 varnish
+age: 327
+x-served-by: cache-lax10678-LGB
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1649051502.793308,VS0,VE1
+vary: Accept-Encoding
+x-fastly-request-id: 30477df94d93351054cf45976b8732cbda6e2f14
+content-length: 7991
+
+ ```
+ 10. Use **`|`** and **`>`** to write the "last modified" date output by **`semester`**
+ into a file called **`last-modified.txt`** in your home directory.
+ ```bash
+ $ #expected
+ ls -l semester | tail -c 22 > ~/last-modified.txt
+ $ cat ~/last-modified.txt
+ Apr  4 10:55 semester
+ $ #alternate
+ $ stat -c '%y' semester > ~/last-modified.txt
+ $ cat ~/last-modified.txt
+ 2022-04-04 10:55:09.337354760 +0800
+ ```
+ 11. Write a command that reads out your laptab battery's power level or your 
+ desktop machine's CPU temperature from **`/sys`**/.Note:if you're a macOS user,
+ your OS doesn't have sysfs,so you can skip this exercise.
+ ```bash
+ $ ls /sys/class/power_supply
+ $ #virtual machine ...
+ $ ls /sys/class/thermal
+ ```
+
+ vim set backup
+ ```vim
+:set number
+:set tabstop=4
+:set shiftwidth=4
+:set listchars=eol:↓,tab:\ \ ┊,trail:~,extends:>,precedes:<
+"set listchars=eol:$,tab:>-,trail:~,extends:>,precedes:<
+:set list
+```
