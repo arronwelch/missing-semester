@@ -41,6 +41,8 @@ including **`if`**,**`case`**,**`while`** and **`for`**.Similarly,
 Here is an example of a function that creates a directory and **`cd`**
 s into it.
 ```bash
+#!/bin/bash
+# mcd.sh
 mcd () {
     mkdir -p "$1"
     cd "$1"
@@ -105,6 +107,7 @@ some of these features.It will iterate through the arguments we provide,
 command if it's not found.
 ```bash
 #!/bin/bash
+# example.sh
 
 echo "Starting program at $(date)" # Date will be substituted
 
@@ -119,6 +122,13 @@ for file in "$@"; do
         echo "# foobar" >> "$file"
     fi
 done
+```
+```bash
+$ bash example.sh mcd.sh
+Starting program ar Wed 06 Apr 2022 12:13:16 AM CST
+Running program example.sh with 1 arguments with pid 152687
+$ tail -n1 mcd.sh
+# foobar
 ```
 In the comparison we tested whether $? was not equal to 0.Bash implements
 many comparisons of this sort --- you can find a detailed list in the
@@ -174,10 +184,17 @@ Note that scripts need not necessarily be written in bash to be called form the
 terminal.For instance,here's a simple Python script that outputs its arguments
 in reserved order:
 ```python
-#!/usr/bin/python3
+#!/bin/python3
+# script.py
 import sys
 for arg in reversed(sys.argv[1:]):
     print(arg)
+```
+```bash
+$ python3 script.py a b c
+c
+b
+a
 ```
 The kernel knowns to execute this script with a python interpreter instead of a
 shell command because we included a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix))line at the top of the script.It is good practice to write
