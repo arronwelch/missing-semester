@@ -184,6 +184,7 @@ Note that scripts need not necessarily be written in bash to be called form the
 terminal.For instance,here's a simple Python script that outputs its arguments
 in reserved order:
 ```python
+#!/usr/bin/env python3
 #!/bin/python3
 # script.py
 import sys
@@ -195,6 +196,8 @@ $ python3 script.py a b c
 c
 b
 a
+$ chmod +x ./script.py # change mode add write permission(everyone) to script.py
+$ ./script.py a b c
 ```
 The kernel knowns to execute this script with a python interpreter instead of a
 shell command because we included a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix))line at the top of the script.It is good practice to write
@@ -277,10 +280,12 @@ pattern matching to be case insensitive).You could start building aliases for
 those scenarios,but part of the shell philosophy is that it is good to explore
 alternatives.Remember,one of the best properties of the shell is that you are
 just calling programs,so you can find(or even write yourself) replacements for
-some.For instance,**`fd`** is a simple,fast,and user-friendly alternative to
-**`find`**.It offers some nice defaults like colorized output,default regex matching,
-and Unicode support.It also has,in my opinion,a more intuitive syntax.For example,
-the syntax to find a pattern **`PATTERN`** is **`fd PATTERN`**.
+some.For instance,[fd](https://github.com/sharkdp/fd) is a 
+simple,fast,and user-friendly alternative to **`find`**.It 
+offers some nice defaults like colorized output,default regex 
+matching,and Unicode support.It also has,in my opinion,a more 
+intuitive syntax.For example,the syntax to find a pattern 
+**`PATTERN`** is **`fd PATTERN`**.
 
 Most would agree that **`find`** and **`fd`** are good,but some of you might be
 wondering about the efficiency of looking for files every time versus compiling
