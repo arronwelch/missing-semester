@@ -210,17 +210,55 @@ def main():
 	fizz_buzz(10)
 ```
 we will fix the following issues:
-- Main is never called
-- Start at 0 instead of 1
-- Prints "fizz" and "buzz" on separate lines for multiples of 15
-- Prints "fizz" for multiples of 5
-- Uses a hard-coded argument of 10 instead of taking a command-line argument
+- Main is never called  
+- Start at 0 instead of 1  
+- Prints "fizz" and "buzz" on separate lines for multiples of 15  
+- Prints "fizz" for multiples of 5  
+- Uses a hard-coded argument of 10 instead of taking a command-line argument  
 
 See the lecture video for the demonstration.Compare how the above changes
 are made using Vim to how you might make the same edits using another
 program.Notice how very few keystrobes are required in vim,allowing you to
-edit at the speed you think.
-""
+edit at the speed you think.  
+
+```bash
+	- python fizz_buzz.py
+	- G
+	- o
+	- <Enter>
+	- if __name__ == '__main__'
+	- 	main()
+	- <Ctrl-c>
+	- :w
+	- python fizz_buzz.py
+	- /range<Enter>
+	- ww
+	- i
+	- 1,
+	- <Ctrl-c>
+	- e
+	- a
+	- +1
+	- <Ctrl-c>
+	- /fizz
+	- n
+	- ci'
+	- buzz
+	- <Ctrl-c>
+	- :w
+	- gg
+	- i
+	- import sys
+	- <Ctrl-c>
+	- jjj
+	- $
+	- i
+	- end=''
+	- <Ctrl-c>
+	- jj
+	- . (repeats the previous editing command that was made)
+``` 
+
 ## Customizing Vim
 Vim is customized through a plain-text configuration file in **~/.vimrc**
 (containing Vimscript commands).There are probably lost of basic settings that
@@ -228,7 +266,8 @@ you want to turn on.
 
 We are providing a well-documented baisc config that you can use as a starting
 point.We recommand using this because it fixes some of Vim's quirky defualt
-behavior.**Download our cinfig [here](https://missing.csail.mit.edu/2020/files/vimrc) and save it to **`~/.vimrv`****.
+behavior.**Download our cinfig** [here](https://missing.csail.mit.edu/2020/files/vimrc) 
+**and save it to** **`~/.vimrv`**.
 
 Vim is heavily customizable,and it's worth spending time exploring
 customization options.You can look at people's dotfiles on GitHub for
@@ -245,15 +284,15 @@ you might find on the internet,you do not need to use a plugin manager for Vim
 Simply create the directory **~/.vim/pack/vender/start/**,and put plugins in
 there(e.g. via **git clone**).
 
-Here are some of our favorite plugins:
-- [ctrcp.vim]():fuzzy file finder
-- [ack.vim]():code search
-- [nerdtree]():file explorer
-- [vim-easymotion]():magic motions
+Here are some of our favorite plugins:  
+- [ctrcp.vim](https://github.com/ctrlpvim/ctrlp.vim):fuzzy file finder  
+- [ack.vim](https://github.com/mileszs/ack.vim):code search  
+- [nerdtree](https://github.com/scrooloose/nerdtree):file explorer  
+- [vim-easymotion](https://github.com/easymotion/vim-easymotion):magic motion  
 
 We're trying to avoid giving an overwhelmingly long list of plugins here.You can
-check out the instructors' dotfiles([Anish](),[Jon](),[Jose]()) to see what other plugins
-we use.Check out [Vim Awesome]() for more awesome Vim plugins.There are also
+check out the instructors' dotfiles([Anish](https://github.com/anishathalye/dotfiles),[Jon](https://github.com/jonhoo/configs),[Jose](https://github.com/JJGO/dotfiles)) to see what other plugins
+we use.Check out [Vim Awesome](https://vimawesome.com/) for more awesome Vim plugins.There are also
 tons of blog posts on this topic:just search for "best Vim plugins".
 
 ## Vim-mode in other programs
@@ -269,7 +308,7 @@ editor is launched when a program wants to start an editor.For example,**git**
 will use this editor for commit messages.
 
 ### Readline
-Many programs use the [GNU Readline]() library for their command-line interface.
+Many programs use the [GNU Readline](https://tiswww.case.edu/php/chet/readline/rltop.html) library for their command-line interface.
 Readline supports(basic) Vim emulation too,which can be enabled by adding
 the following line to the **~/.inputrc** file:
 ```bash
@@ -278,9 +317,9 @@ set editing-mode vi
 With this setting,for example,the Python REPL will support Vim bindings.
 
 ### Others
-There are even vim keybinding extensions for web [browsers]()-some popular
-ones are [Vimium]() for Google Chrome and [Tridactyl]() for FireFox.You can even get
-Vim bindings in [Jupyter notebooks]().Here is a [long list]() of software with vim-like
+There are even vim keybinding extensions for web [browsers](http://vim.wikia.com/wiki/Vim_key_bindings_for_web_browsers)-some popular
+ones are [Vimium](https://chrome.google.com/webstore/detail/vimium/dbepggeogbaibhgnhhndojpepiihcmeb?hl=en) for Google Chrome and [Tridactyl](https://github.com/tridactyl/tridactyl) for FireFox.You can even get
+Vim bindings in [Jupyter notebooks](https://github.com/lambdalisue/jupyter-vim-binding).Here is a [long list](https://reversed.top/2016-08-13/big-list-of-vim-like-software) of software with vim-like
 keybindings.
 
 ## Advanced Vim
@@ -290,7 +329,7 @@ heuristic:whenever you're using your editor and you think "there must be a
 better way of doing this",there probably is:look it up online.
 
 ### Search and replace
-**:s**(substitute)command([documentation]()
+**:s**(substitute)command([documentation](http://vim.wikia.com/wiki/Search_and_replace))
 - **%s/foo/bar/g**
 	- replace foo with bar globally in file
 - **%s/\[.*\](\(.*\))/\1/g
@@ -320,7 +359,7 @@ better way of doing this",there probably is:look it up online.
 	- first clear the macro with **q{character}q**
 	- record the macro,with **@{character}** to invoke the macro recursively
 	(will be a no-op until recording is complete)
-- Example:convert xml to json([file]())
+- Example:convert xml to json([file](https://missing.csail.mit.edu/2020/files/example-data.xml))
 	- Array of objects with keys "name" / "email"
 	- Use a Python program?
 	- Use sed / regexes
@@ -346,34 +385,34 @@ better way of doing this",there probably is:look it up online.
 ## Resources
 - **vimtutor** is a tutorial that comes installed with Vim - if Vim is installed,you
 should be able to run **vimtutor** form your shell
-- [Vim Adventures]() is a game to learn Vim
-- [Vim Tips Wiki]()
-- [Vim Advent Calendar]() has various Vim tips
-- [Vim Golf]() is [code golf](),but where the programming language is Vim's UI
-- [Vi/Vim Stack Exchange]()
-- [Vim Screencasts]()
-- [Practical Vim]() (book)
+- [Vim Adventures](https://vim-adventures.com/) is a game to learn Vim
+- [Vim Tips Wiki](http://vim.wikia.com/wiki/Vim_Tips_Wiki)
+- [Vim Advent Calendar](https://vimways.org/2019/) has various Vim tips
+- [Vim Golf](http://www.vimgolf.com/) is [code golf](https://en.wikipedia.org/wiki/Code_golf),but where the programming language is Vim's UI
+- [Vi/Vim Stack Exchange](https://vi.stackexchange.com/)
+- [Vim Screencasts](http://vimcasts.org/)
+- [Practical Vim](https://pragprog.com/titles/dnvim2/) (book)
 
 ## Exercises
-1. Complete **vimtutor**.Note:it looks best in a **80x24**(80 columns by 24 lines)
-terminal window.
-2. Download our **basic vimrc** and save it to **~/.vimrc**.Read through the well-commemted file(using Vim!),
+1. Complete **vimtutor**.Note:it looks best in a [80x24](https://en.wikipedia.org/wiki/VT100)(80 columns by 24 lines)
+terminal window.  
+2. Download our [basic vimrc](https://missing.csail.mit.edu/2020/files/vimrc) and save it to **~/.vimrc**.Read through the well-commemted file(using Vim!),
 and observe how Vim looks and behaves slightly differently with the new config.
-3. Install and configure a plugin:[ctrlp.vim]().
+3. Install and configure a plugin:[ctrlp.vim](https://github.com/ctrlpvim/ctrlp.vim).
 	1. Create the plugins directory with **mkdir -p**
 	**~/.vim/pack/vendor/start**
 	2. Download the plugin:**cd ~/.vim/pack/vendor/start; git clone https://github.com/ctrlpvim/ctrlp.vim**
-	3. Read the [documentation]() for the plugin.Try using CtrlP to locate a file by
+	3. Read the [documentation](https://github.com/ctrlpvim/ctrlp.vim/blob/master/readme.md) for the plugin.Try using CtrlP to locate a file by
 	navigating to a project directory,opening Vim,and using the Vim
 	command-line to start **:CtrlP**.
-	4. Customize CtrlP by adding [configuration]() to your **~/.vimrc** to open CtrlP
+	4. Customize CtrlP by adding [configuration](https://github.com/ctrlpvim/ctrlp.vim/blob/master/readme.md#basic-options) to your **~/.vimrc** to open CtrlP
 	by pressing CtrlP.
-4. To practice using Vim,re-do the [Demo]() from lecture on your own machine.
+4. To practice using Vim,re-do the [Demo](https://missing.csail.mit.edu/2020/editors/#demo) from lecture on your own machine.
 5. Use Vim for all your text editing for the next month.Whenever something
 seems inefficient,or when you think "there must be a better way",try
 Googling it,there probably is.If you get stuck,come to office hours or send
 us an email.
 6. Configure your other tools to use Vim bindings(see instructions above).
 7. Further customize your **~/.vimrc** and install more plugins.
-8. (advanced) Convert XML to JSON ([example file]()) using Vim macros.Try to do
-this on your own,but you can look at the [macro]() section above if you get stuck.
+8. (advanced) Convert XML to JSON ([example file](https://missing.csail.mit.edu/2020/files/example-data.xml)) using Vim macros.Try to do
+this on your own,but you can look at the [macro](https://missing.csail.mit.edu/2020/editors/#macros) section above if you get stuck.
