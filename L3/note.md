@@ -259,10 +259,10 @@ edit at the speed you think.
 	- . (repeats the previous editing command that was made)
 ``` 
 
-## Customizing Vim
+## Customizing Vim  
 Vim is customized through a plain-text configuration file in **~/.vimrc**
 (containing Vimscript commands).There are probably lost of basic settings that
-you want to turn on.
+you want to turn on.  
 
 We are providing a well-documented baisc config that you can use as a starting
 point.We recommand using this because it fixes some of Vim's quirky defualt
@@ -316,13 +316,14 @@ set editing-mode vi
 ```
 With this setting,for example,the Python REPL will support Vim bindings.
 
-### Others
+### Others  
+
 There are even vim keybinding extensions for web [browsers](http://vim.wikia.com/wiki/Vim_key_bindings_for_web_browsers)-some popular
 ones are [Vimium](https://chrome.google.com/webstore/detail/vimium/dbepggeogbaibhgnhhndojpepiihcmeb?hl=en) for Google Chrome and [Tridactyl](https://github.com/tridactyl/tridactyl) for FireFox.You can even get
 Vim bindings in [Jupyter notebooks](https://github.com/lambdalisue/jupyter-vim-binding).Here is a [long list](https://reversed.top/2016-08-13/big-list-of-vim-like-software) of software with vim-like
 keybindings.
 
-## Advanced Vim
+## Advanced Vim  
 Here are a few examples to show you the power of the editor.We can't teach
 you all of these kinds of things,but you'll learn them as you go.A good
 heuristic:whenever you're using your editor and you think "there must be a
