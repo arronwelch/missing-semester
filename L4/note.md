@@ -99,8 +99,168 @@ match as much text as they can.So,in the above,we'd end up with just
 ```bash
 46.97.239.16 port 55920 [preauth]
 ```
+Which may not be what we wanted.In some regular expression
+implementations,you can just suffix __*__ or __+__ with a __?__ to make them nongreedy,
+but sadly **sed** doesn't support that.We could switch to perl's command-line mode though,
+which does support that construct:
+```bash
+perl -pe 's/.*?Disconnected from //'
+```
+We'll stick to **sed** for the rest of this,because it's by far the more common tool
+for these kinds of jobs.**sed** can also do other handy things like print lines following
+a given match,do multiple substitutions per invocation per invocation,search for things,etc.
+But we won't cover that too much here.**sed** is basically an entire topic in and of itself,
+but there are often better tools.
 
+Okay,so we also have a suffix we'd like to get rid of.How might we do that?It's a little tricky 
+to match just the text that follows the username,expecially if the username can have spaces and such!
+What we need to do is match the whole line:
+```bash
+| sed -E 's/.*Disconnected from (invalid | authenticating )?user .* [^ ]+ port [0-9]+( \[preauth\])?$//'
+```
+Let's look at what's going on with a [regex debugger](https://regex101.com/r/qqbZqh/2).Okay,so the 
+start is still as before.Then,we're matching any of the "user" variants (there are two prefixes in the
+logs).Then we're matching on any string of characters where the username is.Then we're matching on any
+single word(**[^ ]+**;any non-empty sequence of non-space characters).Then the word "port" followed by a 
+sequence of digits.Then possibly the suffix **[preauth]**,and then the end of the line.
 
+Notice that with this technique,as username of "Disconnected from" won't confuse us any more.Can you see why?
 
+There is one problem with this though,and that is that the entire log becomes empty.We want to keep the
+username after all.For this,we can use "capture groups".Any text matched by a regex surrounded by 
+parentheses is stored in a numbered capture group.These are available in the substitution (and in some
+engines,even in the pattern itself!) as **\1**,**\2**,**\3**,etc.So:
+```bash
+| sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+```
+```bash
+cat ssh.log | sed -E 's/^.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+```
+As you can probably imagine,you can come up with *really* complicated regular expressions.For example,
+here's an article on how you might match an [e-mail address](https://www.regular-expressions.info/email.html).
+It's [not easy](https://emailregex.com/).And there's [lots of discussion](https://stackoverflow.com/questions/201323/how-to-validate-an-email-address-using-a-regular-expression/1917982).
+And people have [written tests](https://fightingforalostcause.net/content/misc/2006/compare-email-regex.php).And [test matrices](https://mathiasbynens.be/demo/url-regex).You can even write a regex for determiningif a given number [is a prime number](https://www.noulakaz.net/2007/03/18/a-regular-expression-to-check-for-prime-numbers/).
 
+Regular expressions are notoriously hard to get right,but they are also very handy to have in your toolbox!
+## Back to data wrangling
+Okay,so we now have
+```bash
+ssh myserver journalctl
+    | grep sshd
+    | grep "Disconnected from"
+    | sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+```
+**sed** can do all sorts of other interesting things,like injecting text (with the **i** command),explicitly printing lines (with the **p** command),selecting lines by index,and lots of other things.Check **man sed**!
 
+Anyway.What we have now gives us a list of all the usernames that have attempted to log in.But this is pretty unhelpful,Let's look for common ones:
+```bash
+ssh myserver journalctl
+    | grep sshd
+    | grep "Disconnected from"
+    | sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+    | sort | uniq -c
+```
+**sort** will,well,sort its input.**uniq -c** will collapse consecutive lines that are the same into a single line,prefixed with a count of the number of occurrences.We probably want to sort that too and only keep the most common usernames:
+```bash
+ssh myserver journalctl
+    | grep sshd
+    | grep "Disconnected from"
+    | sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+    | sort | uniq -c
+    | sort -nk1,1 | tail -n10
+```
+**sort -n** will sort in numeric (instead of lexicographic) order.**-k1,1** means "sort by only the first whitespace-separated column".The **,n** part says "sort until the **n**th field,where the default is the end of the line.In this *particular* example,sorting by the whole line wouldn't matter,but we're here to learn!
+
+If we wanted the *least* common ones,we could use **head** instead of **tail**.There's also **sort 0r**,which sorts in reverse order.
+
+Okay,so that's pretty cool,but what if we'd like these extract only the usernames as a comma-separated list instead of one per line,perhaps for a config file?
+```bash
+ssh myserver journalctl
+    | grep sshd
+    | grep "Disconnected from"
+    | sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+    | sort | uniq -c
+    | sort -nk1,1 | tail -n10
+    | awk '{print $2}' | paste -sd,
+```
+If you're using mscOS:note that the command as shown won't work with the BSD **paste** shipped with macOS.See [exercise 4 from the shell tools lecture](https://missing.csail.mit.edu/2020/shell-tools/#exercises) for more on the difference between BSD and GNU coreutils and instructions for how to install GNU coreutils on macOS.
+
+Let's start with **paste**:it lets you combine lines(**-s**) by a given singlecharacter delimiter(**-d**;**,**in this case).But what's this **awk** business?
+
+## awk-another editor
+**awk** is a programming language that just happens to be really good at processing text streams.There is a lot to say about **awk** if you were to learn it properly,but as with many other things here,we'll just go through the basics.
+
+First,what does **{print $2}** do?Well,**awk** programs take the form of an optional pattern plus a block saying what to do if the pattern matches a given line.The default pattern (which we used above)matches all lines.Inside the block,**$0** is set to the entire line's contents,and *$1* through **$n** are set to the **n**th field of that line,when separated by the **awk** field separator(whitespace by defualt,change with **-F**).In this case,we're saying that,for every line,print the contents of the second field,which happens to be the username!  
+
+Let's see if we can do something fancier.Let's compute the number of single-use usernames that start with **-c** and end with **e**:
+```bash
+| awk '$1 == 1 && $2 ~ /^c[^ ]*e$/ { print $2 }' | wc -l
+``` 
+
+There's a lot to unpack here.First,notice that we now have a pattern (the stuff that goes before {...}).
+the pattern says that the first field of the line should be equal to 1 (that's the count from **uniq -c**),and that the second field should match the given regular expression.And the block just says to print the username.We then count the numbers of lines in the output with **wc -l**.
+
+However,**awk** is a programming language,remember?
+```awk
+BEGIN { rows = 0 }
+$1 == 1 && $2 ~ /^c[^ ]*e$/ {rows += $1 }
+END { print rows }
+```
+**BEGIN** is a pattern that matches the start of the input(and **END** matches the end).Now,the per-line block just adds the count from the first field(although it'll always be 1 in this case),and then we print it out at the end.In fact,we *could* get rid of **grep** and **sed** entirely,because **awk** [can do it all](https://backreference.org/2010/02/10/idiomatic-awk/),but we'll leave that as an exercise to the reader.
+## Analyzing data
+You can do math directly in your shell using **bc**,a calculator that can read from STDIN!For example,add the numbers on each line together by concatenating them together,delimited by **+**:
+```bash
+| paste -sd+ | bc -l
+```
+Or produce more elaborate expressions:
+```bash
+echo "2*($(data | paste -sd+))" | bc -l
+```
+You can get stats in a variety of ways.[st](https://github.com/nferraz/st) is pretty neat,but if you already have [R](https://www.r-project.org/):
+```bash
+ssh myserver journalctl
+    | grep sshd
+    | grep "Disconnected from"
+    | sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+    | sort | uniq -c
+    | awk '{print $1}' | R --no-echo -e 'x <- scan(file="stdin", quit=TRUE); summary(x)'
+```
+R is another (weird) programming language that's great at data analysis and [ploting](https://ggplot2.tidyverse.org/).We won't go into too much detail,but suffice to say that **summary** prints summary statistics for a vectory,and we created a vector containing the input stream of numbers,so R gives us the statistics we wanted!
+
+If you just want some simple plotting,**gnuplot** is your friend:
+```bash
+ssh myserver journalctl
+    | grep sshd
+    | grep "Disconnected from"
+    | sed -E 's/.*Disconnected from (invalid |authenticating )?user (.*) [^ ]+ port [0-9]+( \[preauth\])?$/\2/'
+    | sort | uniq -c
+    | sort -nk1,1 | tail -n10
+    | gnuplot -p -e 'set boxwidth 0.5; plot "-" using 1:xtic(2) with boxes'
+```
+## Data wrangling to make arguments
+Sometimes you want to do data wrangling to find things to install ot remove based on some longer list.The data wrangling we're talked about so far + **xargs** can be a powerful combo.
+
+For example,as seen in lecture,I can use the following command to uninstall old nightly builds of Rust 
+from my system by extracting the old build names using data wrangling tools and then passing them via
+**xargs** to the uninstaller:
+```bash
+rustup toolchain list | grep nightly | grep -vE "nightly-x86" | sed 's/-x86.*//' | xargs rustup toolchain uninstall
+```
+## Wrangling binary data
+So far,we have mostly talked about wrangling textual data,but pipes are just as useful for binary data.
+For example,we can usr ffmprg to caputure an image from our camera,convert it to grayscale,compress it,
+send it to a remote machine over SSH,decompress it here,make a copy,and then display it.
+```bash
+ffmpeg -loglevel panic -i /dev/video0 -frames 1 -f image2 -
+    | convert - -colorspace gray - 
+    | gzip
+    | ssh mymachine 'gzip -d | tee copy.jpg | env DISPLAY=:0 feh -'
+```
+
+## Exercises
+1. Take this [short interactive regex tutorial](https://regexone.com/).  
+2. Find the number of words(in /usr/share/dict/words)that contain at least three **a**s and don't have
+a **\'**s ending.What are the three most common last two letters of those words? **sed**'s **y**command,
+or the **tr** program,may help you with case insensitivity.How many of those two-letter combinations
+are there?And for a challenge:which combinations do not occur?   
+3. To do in-place substitution it is quite tempting to do something like **sed**
