@@ -263,36 +263,80 @@ ffmpeg -loglevel panic -i /dev/video0 -frames 1 -f image2 -
 
 2. Find the number of words(in /usr/share/dict/words)that contain at least three **a**s and don't have a **\'**s ending.What are the three most common last two letters of those words? **sed**'s **y**command,or the **tr** program,may help you with case insensitivity.How many of those two-letter combinations are there?And for a challenge:which combinations do not occur?   
 
-    - Find the number of words(in /usr/share/dict/words)that contain at least three **a**s and don't have a **\'**s ending.What are the three most common last two letters of those words?
+- Find the number of words(in /usr/share/dict/words)that contain at least three **a**s and don't have a **\'**s ending.What are the three most common last two letters of those words?
+```bash
+$ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | wc -l
+847
+$ cat /usr/share/dict/words | tr "[:upper:]" "[:lower:]" | grep -E '^(.*a){3}.*$' | grep -v "'s$" | wc -l
+847
+$ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | sed -E 's/.*(..)/\1/' | sort | uniq -c | sort -nk1,1 | tail -n3
+    54 as
+    63 ns
+    101 an
+$ cat /usr/share/dict/words | tr "[:upper:]" "[:lower:]" | grep -E '^(.*a){3}.*$' | grep -v "'s$" | sed -E 's/.*([a-z]{2})$/\1/' | sort | uniq -c | sort -nk1,1 | tail -n3
+    54 as
+    63 ns
+    101 an
+```
+- How many of those two-letter combinations are there?
+```bash
+$ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | sed -E 's/.*(..)/\1/' | sort | uniq -c | wc -l
+111
+$ cat /usr/share/dict/words | tr "[:upper:]" "[:lower:]" | grep -E '^(.*a){3}.*$' | grep -v "'s$" | sed -E 's/.*([a-z]{2})$/\1/' | sort | uniq -c | wc -l
+111
+```
+- And for a challenge:which combinations do not occur?
+```bash
+$ sudo apt-get update -y
+$ sudo apt-get install -y crunch
+$ tldr crunch
+$ crunch 2 2 -o all.txt
+$ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | sed -E 's/.*(..)/\1/' | sort | uniq -c | awk '{print $2}' > combinations.txt
+$ tldr comm
+$ comm -23 all.txt combinations.txt | wc -l
+565
+```
+3.To do in-place substitution it is quite tempting to do something like **sed s/REGEX/SUBSTITUTION/ input.txt > input.txt**.However this is a bad idea,why?Is this particular to **sed**?Use **man sed** to find out how to accomplish this.
+```bash
+$ tldr sed
+$ vi input.txt
+ [i]
+ a bb ccc 
+ <C-c> [:wq<Enter>]
+$ cat input.txt
+a bb ccc
+$ sed -i 's/bb/dddd/' input.txt
+$ cat input.txt
+a dddd ccc
+```
+4.Find your average,median,and max system boot time over the last ten boots.Use **journalctl** on Linux and **log show** on macOS,and look for log timestamps near the beginning and end of each boot.On linux,they may look something like:
+```bash
+Logs begin at ...
+```
+and
+```bash
+systemd[557]:Startup finished in ...
+```
+On macOS,[lool for](https://eclecticlight.co/2018/03/21/macos-unified-log-3-finding-your-way/):
+```bash
+=== system boot:
+```
+and
+```bash
+Previous shutdown cause: 5
+```
+- solution   
     ```bash
-    $ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | wc -l
-    847
-    $ cat /usr/share/dict/words | tr "[:upper:]" "[:lower:]" | grep -E '^(.*a){3}.*$' | grep -v "'s$" | wc -l
-    847
-    $ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | sed -E 's/.*(..)/\1/' | sort | uniq -c | sort -nk1,1 | tail -n3
-        54 as
-        63 ns
-        101 an
-    $ cat /usr/share/dict/words | tr "[:upper:]" "[:lower:]" | grep -E '^(.*a){3}.*$' | grep -v "'s$" | sed -E 's/.*([a-z]{2})$/\1/' | sort | uniq -c | sort -nk1,1 | tail -n3
-        54 as
-        63 ns
-        101 an
+    journalctl | grep -E "Logs begin at|systemd[557]: Startup finished in" > bootlog
     ```
-    - How many of those two-letter combinations are there?
     ```bash
-    $ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | sed -E 's/.*(..)/\1/' | sort | uniq -c | wc -l
-    111
-    $ cat /usr/share/dict/words | tr "[:upper:]" "[:lower:]" | grep -E '^(.*a){3}.*$' | grep -v "'s$" | sed -E 's/.*([a-z]{2})$/\1/' | sort | uniq -c | wc -l
-    111
+    cat bootlog | awk '{print $6} {print $12}' | sed -E 's/^2022-(.*)-(.*)$/\1 \2/' | xargs -n2 | awk '{print $1"*"30"+"$2}' | bc | xargs -n2 | awk '{print $2"-"$1}' | bc
     ```
-    - And for a challenge:which combinations do not occur?
     ```bash
-    $ sudo apt-get update -y
-    $ sudo apt-get install -y crunch
-    $ tldr crunch
-    $ crunch 2 2 -o all.txt
-    $ cat /usr/share/dict/words | sed -E 'y/A/a/' | grep -E '.*a{1,}.*a{1,}.*a{1,}.*' | grep -v ".*'s" | sed -E 's/.*(..)/\1/' | sort | uniq -c | awk '{print $2}' > combinations.txt
-    $ tldr comm
-    $ comm -23 all.txt combinations.txt | wc -l
-    565
+    journalctl | grep -E "Logs begin at|systemd\[1\]: Startup finished in" | tail -n10 | sed -E "s/.* \(userspace\) = (.*)s\.$/\1/" | sort | R --slave -e 'x <- scan(file="stdin", quiet=TRUE); summary(x)'
+    ```
+5. Look for boot messages that are not shared between your past three reboots(see **journalctl**'s **-b** flag).Break this task down into multiple steps.First,find a way to get just the logs from the past three boots.There may be an applicable flag on the tool you use to extract the boot logs,or you can use **sed '0,/STRING/d'** to remove all lines previous to one that matches **STRING**.Next,remove any parts of the line that *always* varies (like the timestamp).Then,de-duplicate the input lines and keep a count of each one (**uniq** is your friend).And finally,eliminate any line whose count is 3(since it was shared among all the boots).
+
+    ```bash
+    {journalctl -b & journalctl -b -1 & journalctl -b -2} | sed -E "s/^.*vostro //" | uniq -c | sort -nk1,1 | grep "\s[1-2] .*\]:.*.$" | less
     ```
