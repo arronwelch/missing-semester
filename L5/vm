@@ -1,0 +1,5 @@
+Host rk
+    User root
+    HostName 107.173.86.21
+    IdentityFile ~/.ssh/id_ed25519
+    RemoteForward 9999 localhost:8888
