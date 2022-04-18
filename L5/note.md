@@ -249,6 +249,113 @@ ssh-coy-id -i .ssh/id_ed25519 foobar@remote
 ```
 ### Copying files over SSH
 There are many ways to copy files over ssh:
-- **ssh+tee**,the simplest is to use **ssh** command execution and STDIN input by doing **cat localfile | ssh remote_server tee serverfile**.Recall that [tee] writes the output from STDIN into a file.
-- [scp]() when copying large amounts of files/directories,the secure copy **scp** command is more convenient since it can easily recurse over paths.The syntax is **scp path/to/local_file remote_host:path/to/remote_file**
+- **ssh+tee**,the simplest is to use **ssh** command execution and STDIN input by doing **cat localfile | ssh remote_server tee serverfile**.Recall that [tee](https://www.man7.org/linux/man-pages/man1/tee.1.htm)lwrites the output from STDIN into a file.   
+- [scp](https://www.man7.org/linux/man-pages/man1/scp.1.html) when copying large amounts of files/directories,the secure copy **scp** command is more convenient since it can easily recurse over paths.The syntax is **scp path/to/local_file remote_host:path/to/remote_file**
+- [rsync](https://www.man7.org/linux/man-pages/man1/rsync.1.html) improves upon **scp** by detecting identical files in local and remote,and preventing copying them again.It also provides more fine grained control over over symlinks,permissions and has extra features like the **-- partial** flag that can resume from a previously interrupted copy.**rsync** has a similar syntax to **scp**.
 
+### Port Forwarding
+In many scenarios you will run into software that listens to specific ports in the machine.When this happens in your local machine you can type **localhost:PORT** or **127.0.0.1:ROOT**,but what do you do with a remote server that does not have its ports directly available through the network/internet?.
+
+This is called port *forwarding* and it comes in two flavors:Local Port Forwarding and Remote Port Forwarding(see the pictures for more details,credit of the pictures from [this StackOverflow post](https://unix.stackexchange.com/questions/115897/whats-ssh-port-forwarding-and-whats-the-difference-between-ssh-local-and-remot).   
+**`Local Port Forwarding`**
+![](https://i.stack.imgur.com/a28N8.png%C2%A0)
+**`Remote Port Forwarding`**
+![](https://i.stack.imgur.com/4iK3b.png%C2%A0)
+The most common scenario is local port forwarding,where a service in the remote machine listens in a port and you want to link a port in your local machine to forward to the remote port.For example,if we execute **jupyter notebook** in the remote server that listens to the port **8888**.Thus,to forward that to the local port **9999**,we would do **ssh -L 9999:localhost:8888 foobar@remote_server** and then navigate to **localhost:9999** in our local machine. 
+
+### SSH Configuration
+We have covered many many arguments that we can pass.A tempting alternative is to create shell aliases that look like:
+```bash
+alias my_server="ssh -i ~/.id_ed25519 --port 2222 -L 9999:localhost:8888 foobar@remote_server
+```
+However,there is a better alternative using **~/.ssh/config**:
+```bash
+Host vm
+    User foobar
+    HostName 172.16.174.141
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+    LocalForward 9999 loclahost:8888
+
+# Configs can also take wildcards
+Host *.mit.edu
+    User foobaz
+```
+An additional advantage of using the **~/.ssh/config** file over aliases is that other programs like **scp**,**rsync**,**mosh**,&c are able to read it as well and convert the setting into the corresponding flags.
+
+Note that the **~/.ssh/config** file can be considered a dotfile,and in general it is fine for it to be included with the rest of your dotfiles.However,if you make it public,think about the information that you are potentially providing strangers on the internet:address of your servers,users,open ports,&c.This may facilitate some types of attacks so be thoughtful about sharing your SSH configuration.
+
+Server side configuration is usually specified in **/etc/ssh/sshd_config**.Here you can make changes like disabling password authentication,changing ssh ports,enabling X11 forwarding,&c.You can specify config settings on a per user basis.
+
+#### Miscellaneous
+A common pain when connecting to a remote server are disconnections due to shutting down/sleeping your computer or changing a network.Moreover if one has a connection with significant lag using ssh can become quite frustrating.[Mosh](https://mosh.org/),the mobile shell,improves upon ssh,allowing roaming connections,intermittent connectively and providing intelligent local echo.
+
+Sometimes it is convenient to mount a remote folder.[sshfs](https://github.com/libfuse/sshfs) can mount a folder on a remote server locally,and then you can use a local editor.
+
+### Shells & Frameworks
+During shell tool and scripting we convered the **bash** shell because it is by far the most ubiquitous shell and most systems have it as the default option.Nevertheless,it is not the only option.
+
+For example,the **zsh** shell is a superset the **bash** and provides many convenient features out of the box such as:
+- Smarter globbing,__**__
+- Inline globbing/wildcard expansion
+- Spelling correction
+- Better tab completion/selection
+- Path expansion(**cd /u/lo/b** will expand as **/usr/local/bin**)
+
+**`Framework`** can improve your shell as well.Some popular general frameworks are [prezto](https://github.com/sorin-ionescu/prezto) or [oh-my-zsh](https://ohmyz.sh/),and smaller ones that focus on specific features such as [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) or [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search).Shells like [fish](https://fishshell.com/) include many of these user-friendly features by default.Some of these features include:
+- Right prompt
+- Command syntax highlighting
+- History substring search
+- manpage based flag completions
+- Smarter autocompletion
+- Prompt themes
+
+One thing to note when using these frameworks is that they may slow down your shell,especially if the code they run is not properly optimized or it is too much code.You can always profile it and disable the features that you do not use often or value over speed.
+
+## Terminal Emulators
+Along with customizing your shell,it is worth spending some time figuring out your choice of **`terminal emulator`** and its settings.There are many many terminal emulators out there(here is a [comparison](https://anarc.at/blog/2018-04-12-terminal-emulators-1/)).
+
+Since you might be spending hundreds to thousands of hours in your terminal it pays off to look into its settings.Some of the aspects that you may want to modify in your terminal include:
+- Font choice
+- Color Scheme
+- Keyboard shortcuts
+- Tab/Pane support
+- Scrollback configuration
+- Performance(some newer terminals like [Alacrity](https://github.com/jwilm/alacritty) or [kitty](https://sw.kovidgoyal.net/kitty/) offer GPU acceleration).
+
+## Exercises
+### Job control
+1. From what we have seen,we can use some **ps aus | grep** commands to get our jobs'pids and then kill them,but there are better ways to do it.Start a **sleep 10000** job in a terminal,background it with **Ctrl-z** and continue its execution with **bg**.Now use **pgrep** to find its pid and **pkill** to kill it without ever typing the pid itself.(Hint:use the **-af** flags).
+```bash
+$ sleep 10000
+^Z
+bg %1
+pgrep sleep
+pkill sleep
+```
+2. Say you don't want to start a process until another completes,how you would go about it?In this exercise our limiting process will always be **`sleep 60 &`**.One way to achieve this is to use the [wait](https://www.man7.org/linux/man-pages/man1/wait.1p.html) command.Try launching the sleep command and having an **`ls`** wait until the background process finishes.
+    ```bash
+    sleep 60 &
+    pgrep sleep | wait && ls
+    ```
+    However,this strategy will fail if we start in a different bash session,since **`wait`** only works for child processes.One feature we did not discuss in the notes is that the **`kill`** command's exit status will be zero on success and nonzero otherwise.**`kill -0`** does not send a signal but will give a nonzero exit status if the process does not exist.Write a bash function called **`pidwait`** that takes a pid and waits until the given process completes.You should use **`sleep`** to avoid wasting CPU unnecessarily.
+    ```bash
+    vi pidwait.sh
+    ```
+    ```bash
+    pidwait()
+    {
+        while kill -0 $1 2>/dev/null
+        do
+        sleep 1
+        done
+        ls
+    }
+    ```
+    ```bash
+    source pidwait.sh
+    sleep 30 &
+    pidwait $(pgrep sleep)
+    ```
+### Terminal multiplexer
+1. Follow this **`tmux`** [tutorial](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and then learn how to do some basic customizations following [these step](https://www.hamvocke.com/blog/a-guide-to-customizing-your-tmux-conf/).
