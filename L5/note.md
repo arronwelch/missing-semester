@@ -326,13 +326,13 @@ Since you might be spending hundreds to thousands of hours in your terminal it p
 ## Exercises
 ### Job control
 1. From what we have seen,we can use some **ps aus | grep** commands to get our jobs'pids and then kill them,but there are better ways to do it.Start a **sleep 10000** job in a terminal,background it with **Ctrl-z** and continue its execution with **bg**.Now use **pgrep** to find its pid and **pkill** to kill it without ever typing the pid itself.(Hint:use the **-af** flags).
-```bash
-$ sleep 10000
-^Z
-bg %1
-pgrep sleep
-pkill sleep
-```
+    ```bash
+    $ sleep 10000
+    ^Z
+    bg %1
+    pgrep sleep
+    pkill sleep
+    ```
 2. Say you don't want to start a process until another completes,how you would go about it?In this exercise our limiting process will always be **`sleep 60 &`**.One way to achieve this is to use the [wait](https://www.man7.org/linux/man-pages/man1/wait.1p.html) command.Try launching the sleep command and having an **`ls`** wait until the background process finishes.
     ```bash
     sleep 60 &
@@ -357,5 +357,25 @@ pkill sleep
     sleep 30 &
     pidwait $(pgrep sleep)
     ```
+
 ### Terminal multiplexer
+
 1. Follow this **`tmux`** [tutorial](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and then learn how to do some basic customizations following [these step](https://www.hamvocke.com/blog/a-guide-to-customizing-your-tmux-conf/).
+
+### Aliases
+
+1. Create an alias **`dc`** that resolves to **`cd`** for when you type it wrongly.
+    ```bash
+    alias dc=cd
+    ```
+2. Run **`history | awk '{$1="";print sunstr($0,2)}' | sort | uniq -c | sort -n | tail -n10`** to get your top 10 most used commands and consider writing shorter aliases for them.Note:this works for Bash;if you're using **ZSH**,use **history 1** instead of just **history**.
+
+### Dotfiles
+
+Let's get you up to speed with dotfiles.
+1. Create a folder for your dotfiles and set up version control.
+2. Add a configuration for at least one program,e.g. your shell,with some customization(to start off,it can be something as simple as customizing your shell prompt by setting **`$PS1`**).
+3. Set up a method to install your dotfiles quickyly (and without manual effort) on a new machine.This can be as simple as a shell script that calls **`ln -s`** for each file.or you could use a [specialized utility](https://dotfiles.github.io/utilities/).
+4. Test your installation script on a fresh virtual machine.
+5. Migrate all of your current tool configurations to your dotfiles repository.
+6. Publish your dotfiles on GitHub.
