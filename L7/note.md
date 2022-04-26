@@ -25,4 +25,16 @@ $ python logger.py log ERROR
 $ python logger.py color
 # Color formatted output
 ```
-One of my favorite tips for making logs more readable is to color code them.By now you probably have realized that your terminal uses colors to make things more readable.But how does it do it?Programs like __ls__ or __grep__ are using [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code),which are special sequences of characters to indicate your shell to change the color of the output.For example,executing __echo -e "\e[38;2;255;0;0mThis is red\e[0m"__ prints the message __This is red__ in red on your terminal,as long as it supports [true color](https://github.com/termstandard/colors#truecolor-support-in-output-devices).
+One of my favorite tips for making logs more readable is to color code them.By now you probably have realized that your terminal uses colors to make things more readable.But how does it do it?Programs like __ls__ or __grep__ are using [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code),which are special sequences of characters to indicate your shell to change the color of the output.For example,executing __echo -e "\e[38;2;255;0;0mThis is red\e[0m"__ prints the message __This is red__ in red on your terminal,as long as it supports [true color](https://github.com/termstandard/colors#truecolor-support-in-output-devices).If your terminal doesn't support this(e.g. macOS's Terminal.app),you can use the more universeally supported escape codes for 16 color choices,for example __echo -e "\e[31;1mThis is red\e[0m"__.
+
+The following script shows how to print many RGB colors into your terminal(again,as long as it supports true color).
+```bash
+#!/usr/bin/env python3
+for R in $(seq 0 20 255); do
+	for G in $(seq 0 20 255); do
+		for B in $(seq 0 20 255); do
+			printf "\e[38;2;${R};${G};${B}m\e[0m";
+		done
+	done
+done
+```
