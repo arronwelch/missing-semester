@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-from cProfile import Profile
+import requests
 from bs4 import BeautifulSoup
-from requests import request
 
 # This is a decorator that tells line_profiler
 # that we want to analyze this function
-@Profile
+@profile
 def get_urls():
 	response = request.get('https://missing.csail.mit.edu')
 	s = BeautifulSoup(response.content, 'lxml')
