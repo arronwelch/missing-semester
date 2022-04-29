@@ -1,4 +1,3 @@
-
 ## Debugging
 ### Printf debugging and Logging
 "The most effective debugging tool is still careful thought,coupled with judiciously placed print statements"--- Brian kernighan,**Unix for Beginners**.
@@ -232,3 +231,58 @@ If we used Python's __cProfile__ profiler we'd get over 2500 lines of output,and
 ```bash
 $ kernprof -l -v a.py
 ```
+### Memory
+In languages like C or C++ memory leaks can cause your program to never release memory that it doesn't need anymore.To help in the process of memory debugging you can use tools like [Valgrind](https://valgrind.org/) that will help you identify memory leaks.
+
+In garbage collected languages like Python it is still useful to use a memory profiler because as long as you have pointers to objects in memory they won't be garbage collected.Here's an example program and its associated output when running it with [memory-profiler](https://pypi.org/project/memory-profiler/)(note the decorator like in __line-profiler__).
+```python
+@profile
+def my_func():
+	a = [1] * (10 ** 6)
+	b = [2] * (2 *10 **7)
+	del b
+	return a
+
+if __name__ == '__main__':
+	my_func()
+```
+```bash
+$ python3 -m memory_profiler example.py
+```
+### Event Profiling
+As it was the case for __strace__ for debugging,you might want to ignore the specifics of the code that you are running and treat it like a black box when profiling.The [pref](https://www.man7.org/linux/man-pages/man1/perf.1.html) command abstracts CPU differences away and does not report time or memory,but instead it reports system events related to your programs.For example,__pref__ can easily report poor cache locality,high amounts of page faults or livelocks.Here is an overview of the command:
+- __pref list__:List the events that can be traced with perf
+- __pref stat COMMAND ARG1 ARG2__:Gets counts of different events related a process or command
+- __perf record COMMAND ARG1 ARG2__:Records the run of a command and saves the statistical data into a file called __perf.data__.
+- __perf report__:Formats and prints the data collected in __perf.data__.
+
+### Visualization
+Profiler output for real world programs will contain large amounts of information because of the inherent complexity of software projects.Humans are visual creatures and are quite terrible at reading large amounts of numbers and making sense of them.Thus there are many tools for displaying profiler's output in an easier to parse way.
+
+One common way to display CPU profiling information for sampling profilers is to use a [Flame Graph](http://www.brendangregg.com/flamegraphs.html),which will display a hierarchy of function calls across the Y axis and time taken proportional to the X axis.They are also interactive,letting you zoom into specific parts of the program and get their stack traces(try clicking in the image below).   
+
+![1](http://www.brendangregg.com/FlameGraphs/cpu-bash-flamegraph.svg)
+
+Call graphs or controls flow graphs display the relationships between subroutines within a program by including functions as nodes and functions calls between them as directed edges.When coupled with profiling information such as the number of calls and time taken,call graphs can be quite useful for interpreting the flow of a program.In Python you can use the [pycallgraph](http://pycallgraph.slowchop.com/en/master/) library to generate them.
+
+![2](https://upload.wikimedia.org/wikipedia/commons/2/2f/A_Call_Graph_generated_by_pycallgraph.png)
+
+### Resource Monitoring
+Sometimes,the first step towards analyzing the performance of your program is to understand what its actual resource consumption is.Programs often run slowly when they are resource constrained,e.g. without enough memory or on a slow network connection.There are a myriad of command line tools for probing and displaying different system resources like CPU usage,memory usage,network,disk usage and so on.
+
+- __General Monitoring__:Probably the most popular is [htop](https://htop.dev/),which is an improved version of [top](https://www.man7.org/linux/man-pages/man1/top.1.html).__htop__ presents various statistics for the currently running processes on the system.__htop__ has a myriad of options and keybinds,some useful ones are:__<F6>__ to sort processes,__t__ to show tree hierarchy and __h__ to toggle threads.See also [glances](https://nicolargo.github.io/glances/) for similar implementation with a great UI.For getting aggregate measures across all processes,[dstat](http://dag.wiee.rs/home-made/dstat/) is another nifty tool that computes real-time resource metrics for lots of different subsystems like I/O,networking,CPU utilization,context switches,&c.
+- __I/O operations__:[iotop](https://www.man7.org/linux/man-pages/man8/iotop.8.html) displays live I/O usage information and is handy to check if a process is doing heavy I/O disk operations
+- __Disk Usage__:[df](https://www.man7.org/linux/man-pages/man1/df.1.html) displays metrics per partitions and [du](http://man7.org/linux/man-pages/man1/du.1.html) displays disk usage per file for the current directory.In these tools the __-h__ flag tells the program to print with human readable format.A more interactive version of __du__ is [ncdu](https://dev.yorhel.nl/ncdu) which lets you navigate folders and delete files and folders as you navigate.
+- __Memory Usage__:[free](https://www.man7.org/linux/man-pages/man1/free.1.html) displays the total amount of free and used memory in the system.Memory is also displayed in tools like __htop__.
+- __Open Files__:[lsof](https://www.man7.org/linux/man-pages/man8/lsof.8.html) lists file information about files opened by processes.It can be quite useful for checking which process has opened a specific file.
+- __Network Connections and Config__:[ss](https://www.man7.org/linux/man-pages/man8/ss.8.html) lets you monitor incoming and outgoing network packets statistics as well as interface statistics.A common use case of __ss__ is figuring out what process is using a given ports in a machine.For displaying routing,nerwork devices and interfaces you can use [ip](http://man7.org/linux/man-pages/man8/ip.8.html).Note that __netstat__ and __ifconfig__ have been deprecated in favor of the former tools respectively.
+- __Network Usage__:[nethogs](https://github.com/raboof/nethogs) and [iftop](http://www.ex-parrot.com/pdw/iftop/) are good interactive CLI tools for monitoring network usage.
+
+If you want to test these tools you can also artificially impose loads on the machine using the [stress](https://linux.die.net/man/1/stress) command.
+
+### Specialized tools
+Sometimes,black box benchmarking is all you need to determine what software to use.Tools like [hyperfine](https://github.com/sharkdp/hyperfine) let you quickly benchmark command line programs.For instance,in the shell tools and scripting lecture we recommanded __fd__ over __find__.We can use __hyperfine__ to compare them in tasks we run often.E.g. in the example below __fd__ was 20x faster than __find__ in my machine.
+```bash
+$ hyperfine --warmup 3 'fd -e jpg' 'find . -iname "*.jpg"'
+```
+As it was the case for debugging,browsers also come with a fantastic set of tools of profiling webpage loading,letting you figure out where time is being spent(loading,rendering,scripting,&c).More info for [Firefox](https://profiler.firefox.com/docs/) and [Chrome](https://developers.google.com/web/tools/chrome-devtools/rendering-tools).
