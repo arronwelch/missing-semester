@@ -1,3 +1,6 @@
+# [Debugging and Profiling](https://youtu.be/l812pUnKxME)
+A golden rule in programming is that code does not do what you expect it to do,but what you tell it to do.Bridging that gap can sometimes be a quite difficult feat.In this lecture we are going to cover useful techniques for dealing with buggy and resource hungry code:debugging and profiling.
+
 ## Debugging
 ### Printf debugging and Logging
 "The most effective debugging tool is still careful thought,coupled with judiciously placed print statements"--- Brian kernighan,**Unix for Beginners**.
