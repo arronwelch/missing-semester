@@ -1,0 +1,3 @@
+# [Metaprogramming](https://youtu.be/_Ms1Z4xfqv4)
+What do we mean by "metaprogramming"?Well,it was the best collective term we could come up with for the set of things that are more about *process* than they are about writing code or working more efficiently.In this lecture,we will look at systems for building and testing your code,and for managing dependencies.These may seem like they are of limited importance in your day-to-day as a student,but the moment you interact with a larger code base through an internship or once you enter the "real world",you will see this everywhere.We should note that "metaprogramming" can also mean "[programs that operate on programs",whereas that is not quite the definition we are using for the purpose of this lecture.
+
