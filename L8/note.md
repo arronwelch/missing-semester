@@ -18,4 +18,106 @@ plot-%.png: %.dat plot.py
 Each directive in this file is a rule for how to produce the left-hand side using the right-hand side.Or,phrased differently,the things named on the right-hand side are dependencies,and the left-hand side is the target.The indented block is a sequence of programs to produce the target from those dependencies.In __make__,the first directive also defines the default goal.If you run __make__ with no arguments,this is the target it will build.Alternatively,you can run something like __make plot-data.png__,and it will build that target instead.
 
 The __%__ in a rule is a "pattern",and will match the same string on the left and on the right.For example,if the target __plot-foo.png__ is requested,__make__ will look for the dependencies __foo.dat__ and __plot.py__.Now let's look at what happens if we run __make__ with an empty source directory.
+```bash
+$ make
+make: *** No rule to make target 'paper.tex', needed by 'paper.pdf'.  Stop.
+```
+__make__ is helpfully telling us that in order to build __paper.pdf__,it needs __paper.tex__,and it has no rule telling it how to make that file.Let's try making it!
+```bash
+$ touch paper.tex
+$ make
+make: *** No rule to make target 'plot-data.png', needed by 'paper.pdf'.  Stop.
+```
+Hmm,interesting,there is a rule to make __plot-data.png__,but it is a pattern rule.Since the source files do not exist(__data.dat__),__make__ simply states that it cannot make that file.Let's try creating all the files:
+```bash
+$ vi paper.tex
+\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+\includegraphics[scale=0.65]{plot-data.png}
+\end{document}
+$ vi plot.py
+#!/usr/bin/env python3
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', type=argparse.FileType('r'))
+parser.add_argument('-o')
+args = parser.parser_args()
+
+data = np.loadtxt(args.i)
+plt.plot(data[:, o], data[:, 1])
+plt.savefig(args.o)
+$ vi data.dat
+1 1
+2 2
+3 3
+4 4
+5 5
+```
+Now what happens if we run __make__?
+```bash
+sudo apt install -y make
+# install pdflatex
+sudo apt install -y texlive-latex-base
+```
+```bash
+$ make
+./plot.py -i data.dat -o plot-data.png
+pdflatex paper.tex
+... lots of output ...
+```
+And look,it make a PDF for us!What if we run __make__ again?
+```bash
+$ make
+make: 'paper.pdf' is up to date.
+```
+It didn't do anything!Why not?Well,because it didn't need to.It checked that all of the previously-built targets were still up to data with respect to their listed dependencies.We can test this by modifying paper.tex and then re-running make:
+```bash
+$ vim paper.tex
+\documentclass{article}
+\usepackage{graphicx}
+\begin{document}
+Hello
+\includegraphics[scale=0.65]{plot-data.png}
+\end{document}
+$ make
+pdflatex paper.tex
+...
+```
+Notice that make did not re-run plot.py because that was not necessary;none of plot-data.png's dependencies changed!
+
+## Dependency management
+At a more macro level,your software projects are likely to have dependencies that are themselves projects.You might depend on installed programs(like python),system packages(like openssl),or libraries within your programming language(like matplotlib).These days,most dependencies will be available through a *repository* that host a large number of such dependencies in a single place,and provides a convenient mechanism for installing them.Some examples include the Ubuntu package repositories for Ubuntu system packages,which you access through the __apt__ tool,RubyGems for Ruby libraries,PyPi for Python libraries,or the Arch User Repository for Arch Linux user-contributed packages.
+
+Since the exact mechanisms for interacting with these repositories vary a lot from repository to repository and from tool to tool,we won't go too much into the details of any specific one in this lecture.What we *will* cover is some of the common terminology they all use.The first among these is *versioning*.Most projects that other projects depend on issue a *version number* with every release.Usually something like 8.1.3 or 64.1.20192004.They are often,but not always,numerical.Version numbers serve many purposes,and one of the most important of them is to ensure that software keeps working.Imagine,for example,that I release a new version of my library where I have renamed a particular function.If someone tried to build some software that depends on my library after I release that update, the build might fail because it calls a function that no longer exists!Versioning attempts to solve this problem by letting a projects say that it depends on a particular version,or range of versions,of some other project.That way,even if the underlying library changes,dependent software continues building by using an older version of my library.
+
+That also isn't ideal though!What if I issue a security update which does not change the public interface of my library(its "API"),and which any project that depended on the old version should immediately start using?This is where the different groups of numbers in a version come in.The exact meaning of each one varies between projects,but one relatively common standard is [semantic versioning](https://semver.org/).With semantic versioning,every version number is of the form:major.minor.patch.The rules are:
+- If a new release does not change the API,increase the patch version.
+- If you *add* to your API in a backwards-compatible way,increase the minor version.
+- If you change the API in a non-backwards-compatible,increase the major version.
+This already provides some major advantages.Now,if my project depends on your project,it *should* be safe to use the latest release with the same major version as the one I built against when I developed it,as long as its minor version is at least __1.3.7__,then it *should* be fine to build it with __1.3.8__,__1.6.1__,or even __1.3.0__.Version __2.2.4__ would probably not be okay,because the major version was increased.We can see an example of semantic versioning in Python's version numbers.Many of you are probably aware that Python2 and Python3 code do not mix very well,which is why that was a *major* version bump.Similarly,code written for Python3.5 might run fine on Python3.7,but possibly not on 3.4.
+
+When working with dependency management systems,you may also come across the notion of *lock files*.A lock file is simply a file that lists the exact version you are *currently* depending on of each dependency.Usually,you need to explicitly run an update program to upgrade to newer versions of your dependencies.There are many reasons for this,such as avoiding unnecessary recompiles,having reproducible builds,or not automatically updating to the latest version(which may be broken).An extreme version of this kind of dependency locking is *vendoring*,which is where you copy all the code of your dependencies into your own project.That give you total control over any changes to it,and lets you introduce your own changes to it,but also means you have to explicitly pull in any updates from the upstream maintainers over time.
+
+## Continuous integration systems
+As you work on larger and larger projects,you'll find that there are often additional tasks you have to do whenever you make a change to it.You might have to upload a new version of the documentation,upload a compiled version somewhere,release the code to pypi,run your test suite,and all sort of other things.Maybe every time someone sends you a pull request on GitHub,you want their code to be style checked and you want some benchmarks to run?When these kinds of needs arise,it's time to take a look at continuous integration.
+
+Continuous integration,or CI,is an umbrella term for "stuff that runs whenever your code changes",and there are many companies out there that provide various types of CI,often for free for open-source projects.Some of the big ones are Travis CI,Azure Piplines,and GitHub Actions.They all work in roughly the same way:you add a file to your repository that describes what should happen when various things happen to that repository.By far the most common one is a rule like "when someone pushed code,run the test suite".When the event triggers,the CI provider spins up a virtual machines(or more),runs the commands in your "recipe",and the usually notes down the results somewhere.You might set it up so that you are notified if the test suite stops passing.or so that a little badge appears in your repository as long as the tests pass.
+
+As an example of a CI system,the class website is set up using GitHub Pages.Pages is a CI action that runs the Jakyll blog software on every push to __master__ and makes the built site available on a particular GitHub domain.This makes it trivial for us to update the website!We just make our changes locally,commit them with git,and then push.CI takes care of the rest.
+
+### A brief aside on testing
+Most large software projects come with a "test suite".You may already be familiar with the general concept of testing,but we thought we'd quickly mention some approaches to testing and testing terminology that you may encounter in the wild:
+- Test suite:a collective term for all the tests
+- Unit test:a "micro-test" that tests a specific feature in isolation
+- Integration test:a "macro-test" that runs a larger part of the system to check that different feature or components work together.
+- Regression test:a test that implements a particular pattern that *previously* caused a bug to ensure that the bug does not resurface.
+- Mocking:to replace a function,module,or type with a fake implementation to avoid testing unrelated functionality.For example,you might "mock the network" or "mock the disk".
+
+## Exercises
+1. Most makefiles provide a target called __clean__.This isn't intended to produce a file called __clean__,but instead to clean up any files that can be re-built by make.Think of it as a way to "undo" all of the build steps.Implement a __clean__ target for the __paper.pdf__ __Makefile__ above.You will have to make the target [phony](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html).You may find the [git ls-files](https://git-scm.com/docs/git-ls-files) subcommand useful.A number of other very common make targets are listed [here](https://www.gnu.org/software/make/manual/html_node/Standard-Targets.html#Standard-Targets).
 
