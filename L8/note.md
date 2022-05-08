@@ -120,4 +120,14 @@ Most large software projects come with a "test suite".You may already be familia
 
 ## Exercises
 1. Most makefiles provide a target called __clean__.This isn't intended to produce a file called __clean__,but instead to clean up any files that can be re-built by make.Think of it as a way to "undo" all of the build steps.Implement a __clean__ target for the __paper.pdf__ __Makefile__ above.You will have to make the target [phony](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html).You may find the [git ls-files](https://git-scm.com/docs/git-ls-files) subcommand useful.A number of other very common make targets are listed [here](https://www.gnu.org/software/make/manual/html_node/Standard-Targets.html#Standard-Targets).
-
+```bash
+$ touch clean
+$ make clean
+$ vi Makefile
+```
+```vim
+.PHONY: clean
+clean:
+	rm *.pdf *.png
+```
+2. Take a look at the various ways to specify version requirements for dependencies in [Rust's build system](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html).Most package repositories support similar syntax.For each one(caret,tilde,wildcard,comparison,and multiple),try to come up with a use-case in which that particular kind of requirement makes sense.
