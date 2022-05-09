@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pip install matplotlib
+# sudo apt-get install -y texlive-latex-base
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
