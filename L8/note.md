@@ -131,3 +131,5 @@ clean:
 	rm *.pdf *.png
 ```
 2. Take a look at the various ways to specify version requirements for dependencies in [Rust's build system](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html).Most package repositories support similar syntax.For each one(caret,tilde,wildcard,comparison,and multiple),try to come up with a use-case in which that particular kind of requirement makes sense.
+3. Git can act as a simple CI system all by itself.In __.git/hooks__ inside any git repository,you will find(currently inactive) files that are run as scripts when a particular action happens.Write a [pre-commit](https://git-scm.com/docs/githooks#_pre_commit) hook that runs __make paper.pdf__ and refuses the commit if the __make__ command fails.This should prevent any commit from having an unbuildable version of the paper.
+
