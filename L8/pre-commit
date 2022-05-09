@@ -14,5 +14,6 @@ else
 Error: could not make pdf
 
 EOF
+	exec git add paper.log paper.pdf plot-data.png
 	exit 1
 fi
